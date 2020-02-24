@@ -16,8 +16,7 @@ def main(db_name: str, dev_eui: str) -> None:
     db = client[db_name]
     # client_sample_rate = '30T'
     table = db['tilt_t_s']
-    pipeline = [{'$project': {'data': 1, '_id': 0}}, {'$unwind': '$data'},
-                {'$project': {'ts': "$data.ts", 'T': "$data.val"}}]
+    pipeline = [{'$project': {'data': 1, '_id': 0}}, {'$unwind': '$data'}]
 
 
     df = pd.DataFrame(table.aggregate(pipeline))
