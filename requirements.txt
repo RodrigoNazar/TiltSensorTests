@@ -2,3 +2,4 @@ pandas
 matplotlib
 pymongo
 numpy
+xlrd
