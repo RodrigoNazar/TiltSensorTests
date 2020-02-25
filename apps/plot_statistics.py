@@ -13,6 +13,8 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
     :return: None
     """
 
+    dev_eui = dev_eui.lower()
+
     client = MongoClient(ip_addr, 27017)
     db = client[db_name]
 
