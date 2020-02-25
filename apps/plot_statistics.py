@@ -1,3 +1,8 @@
+"""
+The date of the unknown data saving is
+2020-02-25T19:53:47.471+00:00
+"""
+
 import argparse
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -8,65 +13,52 @@ from pymongo import MongoClient
 
 def main(ip_addr: str, db_name: str, exc_file: str) -> None:
     """
+
     Plots the histogram and the dataframe of the data.csv
     :param csv_file: File produced by get_csv.py
     :return: None
     """
-    client_sample_rate = 'H'
 
     devices = pd.read_excel(exc_file)['dev eui']
-
-    print(devices[1].lower())
 
     client = MongoClient(ip_addr, 27017)
     db = client[db_name]
 
     table = db['tilt_t_s']
-    pipeline = [
-        {
-            '$match': {
-                'devEUI': devices[1].lower()
+
+    for device in devices:
+        pipeline = [
+            {
+                '$match': {
+                    'devEUI': device.lower()
+                }
+            }, {
+                '$project': {
+                    'data': 1,
+                    '_id': 0
+                }
+            }, {
+                '$unwind': {
+                    'path': '$data'
+                }
+            }, {
+                '$project': {
+                    'ts': '$data.ts'
+                }
             }
-        }, {
-            '$project': {
-                'data': 1,
-                '_id': 0
-            }
-        }, {
-            '$unwind': {
-                'path': '$data'
-            }
-        }, {
-            '$project': {
-                'ts': '$data.ts'
-            }
-        }
-    ]
+        ]
 
-    # table = table.find({"devEUI": dev_eui}, projection={"data": 1, "_id": 0})
-    # print(table.aggregate(pipeline))
+        print('\n-----------------------')
+        print('Device:', device.lower())
 
-    # table = table.aggregate(pipeline)
+        data = pd.DataFrame(table.aggregate(pipeline)).diff(1).dropna()
+        data = data.apply(lambda x: round(x / np.timedelta64(1, 'm')))
 
-    data = pd.DataFrame(table.aggregate(pipeline)).diff(1).dropna().plot()
+        if len(data) > 0:
+            print('Datos:', data.describe())
 
-    # data.set_index('createdAt', inplace=True)
-    # data.index = pd.to_datetime(data.index)
-
-    # data.groupby('devEUI')
-    # data = data.resample(client_sample_rate)
-
-    print(data)
-    # df = df.diff().dropna()
-
-    # df['ts'] = df['ts'].apply(lambda x: x / np.timedelta64(1, 'm'))
-    # df.plot.hist(bins=100)
-    # plt.show()
-    # print(df['ts'].dt.seconds())
-    # df.ts = pd.to_datetime(df.ts)
-    # df.ts = df.ts.dt.total_seconds()
-    # df.diff(-1)['ts'].dropna().plot(kind='hist')
-    # plt.show()
+            data.plot(kind='hist', bins=100, title=device)
+            plt.show()
 
 
 if __name__ == '__main__':
