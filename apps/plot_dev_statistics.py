@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 from pymongo import MongoClient
+from datetime import datetime
 
 
 def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
@@ -41,7 +42,8 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
         }, {
             '$project': {
                 'x': '$data.x',
-                'y': '$data.y'
+                'y': '$data.y',
+                'ts': '$data.ts'
             }
         }
     ]
@@ -51,13 +53,54 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
 
     data = pd.DataFrame(table.aggregate(pipeline))
 
+    # % of data loss
     nan = data.isna().sum()
-
     print('Nan registered:\t\t', nan['x'])
     print('Entries registered:\t', data.count()['x'])
 
     print('Lost data: \t\t', nan['x']/data.count()['x']*100, "%")
-    print(data)
+
+    data.set_index('ts', inplace=True)
+    data.index = pd.to_datetime(data.index)
+    data.index = data.index.map(lambda x: x.replace(second=0, microsecond=0))
+    data = data.ffill()
+    data['x'] = data['x'].apply(lambda x: round(x))
+    data['y'] = data['y'].apply(lambda x: round(x))
+
+    start_h = datetime(year=2020, month=2, day=26, hour=21, minute=15)
+    end_h = datetime(year=2020, month=2, day=26, hour=21, minute=50)
+
+    # data = data.loc[start_h:end_h]
+
+    print(data.describe())
+
+    data['x'].plot(xlim=(start_h, end_h), ylim=(-90, 25))
+    plt.show()
+    data['y'].plot(xlim=(start_h, end_h), ylim=(-90, 25))
+    plt.show()
+
+    '''
+    # Show data hist
+    pipeline.remove(pipeline[-1])
+    pipeline.append({
+        '$project': {
+            'ts': '$data.ts'
+        }
+    })
+
+    hist_data = pd.DataFrame(table.aggregate(pipeline))
+
+    hist_data = hist_data.diff(1).dropna()
+    hist_data = hist_data.apply(lambda x: round(x / np.timedelta64(1, 'm')))
+
+    if len(hist_data) > 0:
+        print('Datos:\n', hist_data.describe())
+
+        hist_data.plot(kind='hist', bins=100, title=dev_eui, xlim=(-1, 50))
+        plt.show()
+    else:
+        print('Dispositivo sin datos')
+    '''
 
 
 if __name__ == '__main__':
