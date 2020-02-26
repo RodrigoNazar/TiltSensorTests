@@ -13,8 +13,7 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
     :param csv_file: File produced by get_csv.py
     :return: None
     """
-
-    never_seen_devices = []
+    dev_eui = dev_eui.lower()
 
     client = MongoClient(ip_addr, 27017)
     db = client[db_name]
@@ -24,7 +23,11 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
     pipeline = [
         {
             '$match': {
-                'devEUI': dev_eui.lower()
+                'devEUI': dev_eui
+            }
+        }, {
+            '$sort': {
+                'updatedAt': -1
             }
         }, {
             '$project': {
@@ -37,7 +40,8 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
             }
         }, {
             '$project': {
-                'ts': '$data.ts'
+                'x': '$data.x',
+                'y': '$data.y'
             }
         }
     ]
@@ -45,19 +49,15 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
     print('\n-----------------------')
     print('Device:', dev_eui.lower())
 
-    data = pd.DataFrame(table.aggregate(pipeline)).diff(1).dropna()
-    data = data.apply(lambda x: round(x / np.timedelta64(1, 'm')))
+    data = pd.DataFrame(table.aggregate(pipeline))
 
-    if len(data) > 0:
-        print('Datos:\n', data.describe())
+    nan = data.isna().sum()
 
-        data.plot(kind='hist', bins=100, title=dev_eui)
-        plt.show()
-    else:
-        never_seen_devices.append(dev_eui.lower())
+    print('Nan registered:\t\t', nan['x'])
+    print('Entries registered:\t', data.count()['x'])
 
-    print('Dispositivos de los que no se tiene información: \n',
-          never_seen_devices)
+    print('Lost data: \t\t', nan['x']/data.count()['x']*100, "%")
+    print(data)
 
 
 if __name__ == '__main__':
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                         help="IP adress of the database to query")
     parser.add_argument('--db_name', type=str, default='iot-ripios',
                         help="Mongo db with tilt data")
-    parser.add_argument('--exc_file', type=str, required=True,
-                        help="The excel file, where the devEUI's are")
+    parser.add_argument('--dev_eui', type=str, required=True,
+                        help="Device thats being queried")
     cmd_args = parser.parse_args()
-    main(cmd_args.ip_addr, cmd_args.db_name, cmd_args.exc_file)
+    main(cmd_args.ip_addr, cmd_args.db_name, cmd_args.dev_eui)
