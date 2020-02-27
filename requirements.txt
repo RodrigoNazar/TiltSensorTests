@@ -3,3 +3,4 @@ matplotlib
 pymongo
 numpy
 xlrd
+mongoengine

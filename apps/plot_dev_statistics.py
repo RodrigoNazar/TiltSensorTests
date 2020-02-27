@@ -62,21 +62,26 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
 
     data.set_index('ts', inplace=True)
     data.index = pd.to_datetime(data.index)
-    data.index = data.index.map(lambda x: x.replace(second=0, microsecond=0))
+    # data.index = data.index.map(lambda x: x.replace(second=0, microsecond=0))
     data = data.ffill()
+    data.sort_index(inplace=True)
     data['x'] = data['x'].apply(lambda x: round(x))
     data['y'] = data['y'].apply(lambda x: round(x))
 
-    start_h = datetime(year=2020, month=2, day=26, hour=21, minute=15)
-    end_h = datetime(year=2020, month=2, day=26, hour=21, minute=50)
+    # start_h = datetime(year=2020, month=2, day=26, hour=21, minute=15)
+    # end_h = datetime(year=2020, month=2, day=26, hour=21, minute=50)
 
     # data = data.loc[start_h:end_h]
 
-    print(data.describe())
+    # print(data.describe())
 
-    data['x'].plot(xlim=(start_h, end_h), ylim=(-90, 25))
-    plt.show()
-    data['y'].plot(xlim=(start_h, end_h), ylim=(-90, 25))
+    print(data.tail())
+    print(datetime.utcnow())
+
+    # data['x'].plot(xlim=(start_h, end_h), ylim=(-90, 25))
+    # plt.show()
+    # data['y'].plot(xlim=(start_h, end_h), ylim=(-90, 25))
+    data.plot()
     plt.show()
 
     '''
