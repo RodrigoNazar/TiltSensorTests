@@ -21,9 +21,22 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
     start = datetime.strptime(start_d, "%d-%m-%y %H:%M:%S")
     end = datetime.strptime(end_d, "%d-%m-%y %H:%M:%S")
 
-    Test(name=name,
-         description=description,
-         start=start, end=end, devEUI=dev_eui.lower()).save()
+    ans = input('Want to add some comments? [y/n]\n> ')
+
+    while ans != 'y' and ans != 'n':
+        print('Bad answer, try again:')
+        ans = input('Want to add some comments? [y/n]\n> ')
+
+    if ans == 'y':
+        comments = input('Add the comment:\n> ')
+        Test(name=name,
+             description=description,
+             start=start, end=end, devEUI=dev_eui.lower(),
+             comments=comments).save()
+    else:
+        Test(name=name,
+             description=description,
+             start=start, end=end, devEUI=dev_eui.lower()).save()
 
 
 if __name__ == '__main__':

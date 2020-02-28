@@ -9,3 +9,4 @@ class Test(Document):
     start       = DateTimeField(required=True)
     end         = DateTimeField(required=True)
     devEUI      = StringField(required=True)
+    comments    = StringField()
