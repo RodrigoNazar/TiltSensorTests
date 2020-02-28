@@ -63,7 +63,7 @@ def main(ip_addr: str, db_name: str, dev_eui: str) -> None:
     data.set_index('ts', inplace=True)
     data.index = pd.to_datetime(data.index)
     # data.index = data.index.map(lambda x: x.replace(second=0, microsecond=0))
-    data = data.ffill()
+    data = data.ffill().dropna()
     data.sort_index(inplace=True)
     data['x'] = data['x'].apply(lambda x: round(x))
     data['y'] = data['y'].apply(lambda x: round(x))
