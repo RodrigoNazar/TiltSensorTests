@@ -6,7 +6,7 @@ import numpy as np
 from pymongo import MongoClient
 
 
-def main(ip_addr: str, db_name: str, exc_file: str) -> None:
+def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
     """
 
     Plots the histogram and the dataframe of the data.csv
@@ -14,7 +14,7 @@ def main(ip_addr: str, db_name: str, exc_file: str) -> None:
     :return: None
     """
 
-    devices = pd.read_excel(exc_file)['dev eui']
+    devices = pd.read_excel(exc_file, exc_sheet)['dev eui']
     never_seen_devices = []
 
     client = MongoClient(ip_addr, 27017)
@@ -70,5 +70,8 @@ if __name__ == '__main__':
                         help="Mongo db with tilt data")
     parser.add_argument('--exc_file', type=str, required=True,
                         help="The excel file, where the devEUI's are")
+    parser.add_argument('--exc_sheet', type=str, required=True,
+                        help="The sheet of the excel file, where the devEUI's are")
     cmd_args = parser.parse_args()
-    main(cmd_args.ip_addr, cmd_args.db_name, cmd_args.exc_file)
+    main(cmd_args.ip_addr, cmd_args.db_name, cmd_args.exc_file,
+         cmd_args.exc_sheet)
