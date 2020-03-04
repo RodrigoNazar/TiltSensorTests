@@ -14,7 +14,7 @@ def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
     :return: None
     """
 
-    devices = pd.read_excel(exc_file, exc_sheet)['dev eui']
+    excel = pd.read_excel(exc_file, exc_sheet)
     never_seen_devices = []
 
     client = MongoClient(ip_addr, 27017)
@@ -22,41 +22,44 @@ def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
 
     table = db['tilt_t_s']
 
-    for device in devices:
-        pipeline = [
-            {
-                '$match': {
-                    'devEUI': device.lower()
+    # for device in devices:
+    for ind in excel.index:
+        device = excel['dev eui'][ind]
+        if excel['Test 2'][ind] != 1:
+            pipeline = [
+                {
+                    '$match': {
+                        'devEUI': device.lower()
+                    }
+                }, {
+                    '$project': {
+                        'data': 1,
+                        '_id': 0
+                    }
+                }, {
+                    '$unwind': {
+                        'path': '$data'
+                    }
+                }, {
+                    '$project': {
+                        'ts': '$data.ts'
+                    }
                 }
-            }, {
-                '$project': {
-                    'data': 1,
-                    '_id': 0
-                }
-            }, {
-                '$unwind': {
-                    'path': '$data'
-                }
-            }, {
-                '$project': {
-                    'ts': '$data.ts'
-                }
-            }
-        ]
+            ]
 
-        print('\n-----------------------')
-        print('Device:', device.lower())
+            print('\n-----------------------')
+            print('Device:', device.lower())
 
-        data = pd.DataFrame(table.aggregate(pipeline)).diff(1).dropna()
-        data = data.apply(lambda x: round(x / np.timedelta64(1, 'm')))
+            data = pd.DataFrame(table.aggregate(pipeline)).diff(1).dropna()
+            data = data.apply(lambda x: round(x / np.timedelta64(1, 'm')))
 
-        if len(data) > 0:
-            print('Datos:\n', data.describe())
+            if len(data) > 0:
+                print('Datos:\n', data.describe())
 
-            data.plot(kind='hist', bins=100, title=device)
-            plt.show()
-        else:
-            never_seen_devices.append(device.lower())
+                data.plot(kind='hist', bins=100, title=device)
+                plt.show()
+            else:
+                never_seen_devices.append(device.lower())
 
     print('Dispositivos de los que no se tiene información: \n',
           never_seen_devices)
