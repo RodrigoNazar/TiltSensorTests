@@ -14,17 +14,21 @@ def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
     :return: None
     """
 
+    print('\n' + 15*'*', 'Corriendo el test QA1:', 15*'*', '\n')
+
     excel = pd.read_excel(exc_file, exc_sheet)
     never_seen_devices = []
+    approved_devices = []
+    not_approved_devices = []
 
     client = MongoClient(ip_addr, 27017)
     db = client[db_name]
 
     table = db['tilt_t_s']
 
-    # for device in devices:
     for ind in excel.index:
         device = excel['dev eui'][ind]
+
         if excel['Test 2'][ind] != 1:
             pipeline = [
                 {
@@ -47,22 +51,53 @@ def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
                 }
             ]
 
-            print('\n-----------------------')
-            print('Device:', device.lower())
+            # print('\n-----------------------')
+            # print('Device:', device)
 
             data = pd.DataFrame(table.aggregate(pipeline)).diff(1).dropna()
             data = data.apply(lambda x: round(x / np.timedelta64(1, 'm')))
 
             if len(data) > 0:
+                '''
+                Descripción de cada dispositivo: 
+
                 print('Datos:\n', data.describe())
+                print('Moda:\n', 15.0 in data.mode().values)
+
+                Mostrar histograma de cada dispositivo:
 
                 data.plot(kind='hist', bins=100, title=device)
                 plt.show()
+
+                '''
+
+                if 15.0 in data.mode().values:
+                    approved_devices.append((device, ind + 2))
+
+                else:
+                    not_approved_devices.append((device, ind + 2))
+
             else:
                 never_seen_devices.append(device.lower())
 
-    print('Dispositivos de los que no se tiene información: \n',
-          never_seen_devices)
+            if ind == 42:
+                print('ind', ind)
+                print('\n' + 100*'*' + '\n')
+                print(excel['Test 2'][ind], type(excel['Test 2'][ind]))
+
+    print('\nDispositivos de los que no se tiene información: \n')
+    for device in never_seen_devices:
+        print(device)
+
+    print('\nDispositivos aprovados por el QA1:\n')
+    for device in approved_devices:
+        print('Índice:\t\t',
+              device[1], '\nDevice EUI:\t', device[0])
+
+    print('\nDispositivos no aprovados por el QA1:\n', '\n')
+    for device in not_approved_devices:
+        print('Índice:\t\t',
+              device[1], '\nDevice EUI:\t', device[0], '\n')
 
 
 if __name__ == '__main__':
