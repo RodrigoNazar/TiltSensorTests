@@ -29,7 +29,7 @@ def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
     for ind in excel.index:
         device = excel['dev eui'][ind]
 
-        if excel['Test 2'][ind] != 1:
+        if excel['Test 1'][ind] != 1:
             pipeline = [
                 {
                     '$match': {
@@ -79,11 +79,6 @@ def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
 
             else:
                 never_seen_devices.append(device.lower())
-
-            if ind == 42:
-                print('ind', ind)
-                print('\n' + 100*'*' + '\n')
-                print(excel['Test 2'][ind], type(excel['Test 2'][ind]))
 
     print('\nDispositivos de los que no se tiene información: \n')
     for device in never_seen_devices:
