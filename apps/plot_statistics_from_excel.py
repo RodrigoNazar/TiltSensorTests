@@ -28,11 +28,12 @@ def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
 
     for ind in excel.index:
         device = excel['dev eui'][ind]
-
-        if excel['Test 1'][ind] != 1:
-            pipeline = [
-                {
-                    '$match': {
+        
+        if not isinstance(device, float):
+            if excel['Test 1'][ind] != 1:
+                pipeline = [
+                 {
+                        '$match': {
                         'devEUI': device.lower()
                     }
                 }, {
@@ -54,31 +55,31 @@ def main(ip_addr: str, db_name: str, exc_file: str, exc_sheet: str) -> None:
             # print('\n-----------------------')
             # print('Device:', device)
 
-            data = pd.DataFrame(table.aggregate(pipeline)).diff(1).dropna()
-            data = data.apply(lambda x: round(x / np.timedelta64(1, 'm')))
+                data = pd.DataFrame(table.aggregate(pipeline)).diff(1).dropna()
+                data = data.apply(lambda x: round(x / np.timedelta64(1, 'm')))
 
-            if len(data) > 0:
-                '''
-                Descripción de cada dispositivo: 
+                if len(data) > 0:
+                    '''
+                    Descripción de cada dispositivo: 
 
-                print('Datos:\n', data.describe())
-                print('Moda:\n', 15.0 in data.mode().values)
+                    print('Datos:\n', data.describe())
+                    print('Moda:\n', 15.0 in data.mode().values)
 
-                Mostrar histograma de cada dispositivo:
+                    Mostrar histograma de cada dispositivo:
 
-                data.plot(kind='hist', bins=100, title=device)
-                plt.show()
+                    data.plot(kind='hist', bins=100, title=device)
+                    plt.show()
 
-                '''
+                    '''
 
-                if 15.0 in data.mode().values:
-                    approved_devices.append((device, ind + 2))
+                    if 15.0 in data.mode().values:
+                        approved_devices.append((device, ind + 2))
+
+                    else:
+                        not_approved_devices.append((device, ind + 2))
 
                 else:
-                    not_approved_devices.append((device, ind + 2))
-
-            else:
-                never_seen_devices.append(device.lower())
+                    never_seen_devices.append(device.lower())
 
     print('\nDispositivos de los que no se tiene información: \n')
     for device in never_seen_devices:
